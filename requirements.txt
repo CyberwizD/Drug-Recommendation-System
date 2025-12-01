@@ -1,0 +1,13 @@
+
+reflex==0.8.21
+pandas
+numpy
+scikit-learn
+lightgbm
+nltk
+beautifulsoup4
+vaderSentiment
+matplotlib
+seaborn
+plotly
+sqlalchemy
