@@ -1,6 +1,7 @@
 """Main Reflex application for Drug Recommendation System"""
 import reflex as rx
 from typing import List, Dict, Optional
+from pydantic import BaseModel
 import sys
 import os
 
@@ -10,6 +11,33 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database.db_manager import DatabaseManager
 from models.recommendation_engine import RecommendationEngine
 from models.model_training import ModelTrainer
+
+
+# Type classes for Reflex
+class DrugRecommendation(BaseModel):
+    """Type for drug recommendation data"""
+    drug_name: str
+    score: float
+    effectiveness_prob: float
+    avg_rating: float
+    avg_sentiment: float
+    review_count: int
+    total_useful_count: int
+
+
+class SearchHistoryItem(BaseModel):
+    """Type for search history item"""
+    condition: str
+    timestamp: str
+    recommendations: List[DrugRecommendation]
+
+
+class ModelMetrics(BaseModel):
+    """Type for model performance metrics"""
+    accuracy: float
+    precision: float
+    recall: float
+    f1_score: float
 
 
 class State(rx.State):
@@ -24,17 +52,17 @@ class State(rx.State):
     # Recommendation state
     selected_condition: str = ""
     available_conditions: List[str] = []
-    recommendations: List[Dict] = []
+    recommendations: List[DrugRecommendation] = []
     is_loading: bool = False
     search_performed: bool = False
     
     # History
-    search_history: List[Dict] = []
+    search_history: List[SearchHistoryItem] = []
     
     # Analysis
     performance_chart: str = ""
     confusion_matrix_chart: str = ""
-    model_results: Dict = {}
+    model_results: Dict[str, ModelMetrics] = {}
     
     def on_load(self):
         """Initialize state when app loads"""
@@ -57,7 +85,11 @@ class State(rx.State):
             
             # Load model results for analysis
             _, _, model_results = ModelTrainer.load_best_model('models/best_model.pkl')
-            self.model_results = model_results
+            # Convert dict to typed ModelMetrics objects
+            self.model_results = {
+                model_name: ModelMetrics(**metrics)
+                for model_name, metrics in model_results.items()
+            }
             
             # Generate charts
             trainer = ModelTrainer()
@@ -114,9 +146,19 @@ class State(rx.State):
         """Load user's search history"""
         if self.user_id:
             db = DatabaseManager()
-            self.search_history = db.get_user_history(self.user_id)
+            history_data = db.get_user_history(self.user_id)
+            # Convert dict history to SearchHistoryItem objects
+            self.search_history = [
+                SearchHistoryItem(
+                    condition=item['condition'],
+                    timestamp=item['timestamp'],
+                    recommendations=[
+                        DrugRecommendation(**rec) for rec in item['recommendations']
+                    ]
+                )
+                for item in history_data
+            ]
     
-    @rx.background
     async def search_drugs(self):
         """Search for drug recommendations"""
         if not self.selected_condition:
@@ -136,7 +178,10 @@ class State(rx.State):
             )
             
             async with self:
-                self.recommendations = recommendations
+                # Convert dict recommendations to DrugRecommendation objects
+                self.recommendations = [
+                    DrugRecommendation(**rec) for rec in recommendations
+                ]
                 
                 # Save to history
                 if self.user_id and len(recommendations) > 0:
@@ -288,16 +333,16 @@ def navigation_bar() -> rx.Component:
     )
 
 
-def recommendation_card(drug: Dict) -> rx.Component:
+def recommendation_card(drug: DrugRecommendation, rank: int) -> rx.Component:
     """Individual drug recommendation card"""
     return rx.card(
         rx.vstack(
             # Header with drug name and score
             rx.hstack(
                 rx.vstack(
-                    rx.heading(drug['drug_name'], size="5"),
+                    rx.heading(drug.drug_name, size="5"),
                     rx.text(
-                        f"Composite Score: {drug['score']:.3f}",
+                        f"Composite Score: {drug.score:.3f}",
                         size="2",
                         color="gray"
                     ),
@@ -306,7 +351,7 @@ def recommendation_card(drug: Dict) -> rx.Component:
                 ),
                 rx.spacer(),
                 rx.badge(
-                    f"Rank #{drug.get('rank', 1)}",
+                    f"Rank #{rank}",
                     color_scheme="blue",
                     size="3"
                 ),
@@ -323,7 +368,7 @@ def recommendation_card(drug: Dict) -> rx.Component:
                     rx.hstack(
                         rx.icon("zap", size=20, color="green"),
                         rx.text(
-                            f"{drug['effectiveness_prob']:.1%}",
+                            f"{drug.effectiveness_prob * 100:.1f}%",
                             size="5",
                             weight="bold",
                             color="green"
@@ -339,7 +384,7 @@ def recommendation_card(drug: Dict) -> rx.Component:
                     rx.hstack(
                         rx.icon("star", size=20, color="orange"),
                         rx.text(
-                            f"{drug['avg_rating']:.1f}/10",
+                            f"{drug.avg_rating:.1f}/10",
                             size="5",
                             weight="bold",
                             color="orange"
@@ -353,28 +398,28 @@ def recommendation_card(drug: Dict) -> rx.Component:
                 rx.vstack(
                     rx.text("Sentiment", size="2", color="gray", weight="medium"),
                     rx.cond(
-                        drug['avg_sentiment'] > 0,
+                        drug.avg_sentiment.to(float) > 0,
                         rx.hstack(
                             rx.icon("thumbs-up", size=20, color="green"),
                             rx.text("Positive", size="5", weight="bold", color="green"),
                             spacing="1",
-                            align="center"
+                            align="center",
                         ),
                         rx.cond(
-                            drug['avg_sentiment'] < 0,
+                            drug.avg_sentiment.to(float) < 0,
                             rx.hstack(
                                 rx.icon("thumbs-down", size=20, color="red"),
                                 rx.text("Negative", size="5", weight="bold", color="red"),
                                 spacing="1",
-                                align="center"
+                                align="center",
                             ),
                             rx.hstack(
                                 rx.icon("minus", size=20, color="gray"),
                                 rx.text("Neutral", size="5", weight="bold", color="gray"),
                                 spacing="1",
-                                align="center"
-                            )
-                        )
+                                align="center",
+                            ),
+                        ),
                     ),
                     align="start",
                     spacing="1"
@@ -389,12 +434,12 @@ def recommendation_card(drug: Dict) -> rx.Component:
             # Additional info
             rx.hstack(
                 rx.badge(
-                    f"{drug['review_count']} reviews",
+                    f"{drug.review_count} reviews",
                     color_scheme="gray",
                     variant="soft"
                 ),
                 rx.badge(
-                    f"{drug['total_useful_count']} found helpful",
+                    f"{drug.total_useful_count} found helpful",
                     color_scheme="blue",
                     variant="soft"
                 ),
@@ -484,7 +529,7 @@ def main_page() -> rx.Component:
                             rx.vstack(
                                 rx.card(
                                     rx.hstack(
-                                        rx.icon("check-circle", size=24, color="green"),
+                                        rx.icon("check", size=24, color="green"),
                                         rx.heading(
                                             f"Top 5 Recommendations for {State.selected_condition}",
                                             size="5"
@@ -498,7 +543,7 @@ def main_page() -> rx.Component:
                                 ),
                                 rx.foreach(
                                     State.recommendations,
-                                    lambda drug, idx: recommendation_card({**drug, 'rank': idx + 1})
+                                    lambda drug, idx: recommendation_card(drug, idx + 1)
                                 ),
                                 width="100%",
                                 spacing="3"
@@ -571,9 +616,9 @@ def history_page() -> rx.Component:
                                 rx.vstack(
                                     rx.hstack(
                                         rx.vstack(
-                                            rx.heading(item['condition'], size="5"),
+                                            rx.heading(item.condition, size="5"),
                                             rx.text(
-                                                item['timestamp'],
+                                                item.timestamp,
                                                 size="2",
                                                 color="gray"
                                             ),
@@ -582,7 +627,7 @@ def history_page() -> rx.Component:
                                         ),
                                         rx.spacer(),
                                         rx.badge(
-                                            f"{item['recommendations'].length()} drugs",
+                                            f"{item.recommendations.length()} drugs",
                                             color_scheme="blue",
                                             size="2"
                                         ),
@@ -592,7 +637,7 @@ def history_page() -> rx.Component:
                                     rx.button(
                                         rx.icon("refresh-cw", size=16),
                                         "View Again",
-                                        on_click=lambda: State.load_from_history(item['condition']),
+                                        on_click=lambda: State.load_from_history(item.condition),
                                         size="2",
                                         variant="soft",
                                         margin_top="1rem"
@@ -738,16 +783,24 @@ def analysis_page() -> rx.Component:
                                     State.model_results.items(),
                                     lambda item: rx.table.row(
                                         rx.table.cell(
-                                            rx.badge(
-                                                item[0],
-                                                color_scheme="blue" if item[0] == "LightGBM" else "gray",
-                                                size="2"
+                                            rx.cond(
+                                                item[0] == "LightGBM",
+                                                rx.badge(
+                                                    item[0],
+                                                    color_scheme="blue",
+                                                    size="2"
+                                                ),
+                                                rx.badge(
+                                                    item[0],
+                                                    color_scheme="gray",
+                                                    size="2"
+                                                )
                                             )
                                         ),
-                                        rx.table.cell(f"{item[1]['accuracy']:.4f}"),
-                                        rx.table.cell(f"{item[1]['precision']:.4f}"),
-                                        rx.table.cell(f"{item[1]['recall']:.4f}"),
-                                        rx.table.cell(f"{item[1]['f1_score']:.4f}"),
+                                        rx.table.cell(f"{item[1].accuracy:.4f}"),
+                                        rx.table.cell(f"{item[1].precision:.4f}"),
+                                        rx.table.cell(f"{item[1].recall:.4f}"),
+                                        rx.table.cell(f"{item[1].f1_score:.4f}"),
                                     )
                                 )
                             ),
@@ -766,7 +819,7 @@ def analysis_page() -> rx.Component:
                         rx.heading("Key Insights", size="5", margin_bottom="1rem"),
                         rx.vstack(
                             rx.hstack(
-                                rx.icon("check-circle", size=20, color="green"),
+                                rx.icon("check", size=20, color="green"),
                                 rx.text(
                                     "LightGBM achieved the highest accuracy at 92.4% with F1-score of 0.92",
                                     size="3"
@@ -775,7 +828,7 @@ def analysis_page() -> rx.Component:
                                 align="center"
                             ),
                             rx.hstack(
-                                rx.icon("check-circle", size=20, color="green"),
+                                rx.icon("check", size=20, color="green"),
                                 rx.text(
                                     "Random Forest performed well with 88.2% accuracy, showing robustness",
                                     size="3"
@@ -784,7 +837,7 @@ def analysis_page() -> rx.Component:
                                 align="center"
                             ),
                             rx.hstack(
-                                rx.icon("check-circle", size=20, color="green"),
+                                rx.icon("check", size=20, color="green"),
                                 rx.text(
                                     "Sentiment analysis integration significantly improved recommendation quality",
                                     size="3"
@@ -793,7 +846,7 @@ def analysis_page() -> rx.Component:
                                 align="center"
                             ),
                             rx.hstack(
-                                rx.icon("check-circle", size=20, color="green"),
+                                rx.icon("check", size=20, color="green"),
                                 rx.text(
                                     "TF-IDF vectorization with 3000 features captured text semantics effectively",
                                     size="3"
