@@ -48,6 +48,7 @@ class State(rx.State):
     user_id: Optional[int] = None
     is_logged_in: bool = False
     login_error: str = ""
+    is_logging_in: bool = False  # Loading state for login button
     
     # Recommendation state
     selected_condition: str = ""
@@ -128,28 +129,34 @@ class State(rx.State):
             self.login_error = "Please enter a username"
             return
         
-        username = self.username.strip()
+        # Set loading state
+        self.is_logging_in = True
         
-        # Initialize database
-        db = DatabaseManager()
-        
-        # Try to get existing user
-        user_id = db.get_user_id(username)
-        
-        if user_id is None:
-            # Create new user
-            user_id = db.create_user(username)
+        try:
+            username = self.username.strip()
+            
+            # Initialize database
+            db = DatabaseManager()
+            
+            # Try to get existing user
+            user_id = db.get_user_id(username)
+            
             if user_id is None:
-                self.login_error = "Username already exists"
-                return
-        
-        self.user_id = user_id
-        self.is_logged_in = True
-        self.login_error = ""
-        
-        # Load models after login
-        self.load_models()
-        self.load_history()
+                # Create new user
+                user_id = db.create_user(username)
+                if user_id is None:
+                    self.login_error = "Username already exists"
+                    return
+            
+            self.user_id = user_id
+            self.is_logged_in = True
+            self.login_error = ""
+            
+            # Load models after login
+            self.load_models()
+            self.load_history()
+        finally:
+            self.is_logging_in = False
     
     def handle_logout(self):
         """Handle user logout"""
@@ -222,7 +229,8 @@ class State(rx.State):
             async with self:
                 self.is_loading = False
     
-    def load_from_history(self, condition: str):
+    async def load_from_history(self, condition: str):
         """Load a previous search from history"""
         self.selected_condition = condition
-        return State.search_drugs
+        # Trigger search
+        await self.search_drugs()
