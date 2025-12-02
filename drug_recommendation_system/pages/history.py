@@ -81,7 +81,11 @@ def history_page() -> rx.Component:
                                             rx.button(
                                                 rx.icon("refresh-cw", size=16),
                                                 "View Again",
-                                                on_click=lambda: State.load_from_history(item.condition),
+                                                on_click=[
+                                                    State.set_selected_condition(item.condition),
+                                                    State.set_search_performed(False),
+                                                    State.search_drugs
+                                                ],
                                                 size="2",
                                                 variant="soft",
                                                 style={
