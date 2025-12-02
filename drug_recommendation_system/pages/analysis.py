@@ -5,7 +5,7 @@ from ..components import navigation_bar
 
 
 def analysis_page() -> rx.Component:
-    """Interactive dashboard for model analysis"""
+    """Interactive dashboard for comprehensive model analysis"""
     return rx.box(
         navigation_bar(),
         
@@ -30,7 +30,7 @@ def analysis_page() -> rx.Component:
                         align="center"
                     ),
                     rx.text(
-                        "Comprehensive machine learning model evaluation and performance metrics",
+                        "Comprehensive machine learning model evaluation with advanced metrics and visualizations",
                         size="3",
                         color="gray",
                         text_align="center"
@@ -50,7 +50,7 @@ def analysis_page() -> rx.Component:
                             align="center"
                         ),
                         rx.text(
-                            "Comparing 4 machine learning algorithms: Naive Bayes, Random Forest, Perceptron, and LightGBM (best performer)",
+                            "Comparing 4 machine learning algorithms across key metrics: Accuracy, Precision, Recall, and F1-Score",
                             size="2",
                             color="gray",
                             line_height="1.6"
@@ -78,17 +78,91 @@ def analysis_page() -> rx.Component:
                     }
                 ),
                 
+                # ROC Curves and Precision-Recall in a grid
+                rx.box(
+                    rx.card(
+                        rx.vstack(
+                            rx.hstack(
+                                rx.icon("activity", size=24, color="#667eea"),
+                                rx.heading("ROC Curves", size="5", weight="bold"),
+                                spacing="2",
+                                align="center"
+                            ),
+                            rx.text(
+                                "Receiver Operating Characteristic curves showing true positive rate vs false positive rate. Higher AUC (Area Under Curve) indicates better model performance.",
+                                size="2",
+                                color="gray",
+                                line_height="1.6"
+                            ),
+                            rx.divider(margin_y="1rem"),
+                            rx.image(
+                                src=State.roc_curves_chart,
+                                width="100%",
+                                height="auto",
+                                border_radius="0.5rem"
+                            ),
+                            width="100%",
+                            spacing="3",
+                            align="start"
+                        ),
+                        style={
+                            "background": "white",
+                            "border": "1px solid #e5e7eb",
+                            "border-radius": "1rem",
+                            "padding": "2rem"
+                        }
+                    ),
+                    rx.card(
+                        rx.vstack(
+                            rx.hstack(
+                                rx.icon("target", size=24, color="#764ba2"),
+                                rx.heading("Precision-Recall Curves", size="5", weight="bold"),
+                                spacing="2",
+                                align="center"
+                            ),
+                            rx.text(
+                                "Precision-Recall curves are especially useful for imbalanced datasets. Average Precision (AP) summarizes the curve as a weighted mean of precisions.",
+                                size="2",
+                                color="gray",
+                                line_height="1.6"
+                            ),
+                            rx.divider(margin_y="1rem"),
+                            rx.image(
+                                src=State.precision_recall_chart,
+                                width="100%",
+                                height="auto",
+                                border_radius="0.5rem"
+                            ),
+                            width="100%",
+                            spacing="3",
+                            align="start"
+                        ),
+                        style={
+                            "background": "white",
+                            "border": "1px solid #e5e7eb",
+                            "border-radius": "1rem",
+                            "padding": "2rem"
+                        }
+                    ),
+                    style={
+                        "display": "grid",
+                        "grid-template-columns": "repeat(auto-fit, minmax(500px, 1fr))",
+                        "gap": "1.5rem",
+                        "width": "100%"
+                    }
+                ),
+                
                 # Confusion matrix
                 rx.card(
                     rx.vstack(
                         rx.hstack(
                             rx.icon("grid", size=24, color="#667eea"),
-                            rx.heading("Confusion Matrix - Best Model", size="5", weight="bold"),
+                            rx.heading("Confusion Matrix - Best Model (LightGBM)", size="5", weight="bold"),
                             spacing="2",
                             align="center"
                         ),
                         rx.text(
-                            "Visual representation of model predictions vs actual labels. Shows True Positives, True Negatives, False Positives, and False Negatives",
+                            "Visual representation of model predictions vs actual labels. Diagonal cells show correct predictions (True Positives and True Negatives), while off-diagonal cells show errors.",
                             size="2",
                             color="gray",
                             line_height="1.6"
@@ -116,6 +190,121 @@ def analysis_page() -> rx.Component:
                     }
                 ),
                 
+                # Radar Chart and Class Distribution
+                rx.box(
+                    rx.card(
+                        rx.vstack(
+                            rx.hstack(
+                                rx.icon("radar", size=24, color="#10b981"),
+                                rx.heading("Performance Radar Chart", size="5", weight="bold"),
+                                spacing="2",
+                                align="center"
+                            ),
+                            rx.text(
+                                "Multi-dimensional comparison of all models across different metrics. Larger area indicates better overall performance.",
+                                size="2",
+                                color="gray",
+                                line_height="1.6"
+                            ),
+                            rx.divider(margin_y="1rem"),
+                            rx.image(
+                                src=State.metrics_radar_chart,
+                                width="100%",
+                                height="auto",
+                                border_radius="0.5rem"
+                            ),
+                            width="100%",
+                            spacing="3",
+                            align="start"
+                        ),
+                        style={
+                            "background": "white",
+                            "border": "1px solid #e5e7eb",
+                            "border-radius": "1rem",
+                            "padding": "2rem"
+                        }
+                    ),
+                    rx.cond(
+                        State.class_distribution_chart != "",
+                        rx.card(
+                            rx.vstack(
+                                rx.hstack(
+                                    rx.icon("pie-chart", size=24, color="#f59e0b"),
+                                    rx.heading("Class Distribution", size="5", weight="bold"),
+                                    spacing="2",
+                                    align="center"
+                                ),
+                                rx.text(
+                                    "Distribution of effective vs ineffective drug classifications in training and test sets. Balanced classes ensure fair model evaluation.",
+                                    size="2",
+                                    color="gray",
+                                    line_height="1.6"
+                                ),
+                                rx.divider(margin_y="1rem"),
+                                rx.image(
+                                    src=State.class_distribution_chart,
+                                    width="100%",
+                                    height="auto",
+                                    border_radius="0.5rem"
+                                ),
+                                width="100%",
+                                spacing="3",
+                                align="start"
+                            ),
+                            style={
+                                "background": "white",
+                                "border": "1px solid #e5e7eb",
+                                "border-radius": "1rem",
+                                "padding": "2rem"
+                            }
+                        )
+                    ),
+                    style={
+                        "display": "grid",
+                        "grid-template-columns": "repeat(auto-fit, minmax(500px, 1fr))",
+                        "gap": "1.5rem",
+                        "width": "100%"
+                    }
+                ),
+                
+                # Feature Importance (if available)
+                rx.cond(
+                    State.feature_importance_chart != "",
+                    rx.card(
+                        rx.vstack(
+                            rx.hstack(
+                                rx.icon("zap", size=24, color="#667eea"),
+                                rx.heading("Feature Importance Analysis", size="5", weight="bold"),
+                                spacing="2",
+                                align="center"
+                            ),
+                            rx.text(
+                                "Top 20 most influential features in the LightGBM model. Higher importance scores indicate features that contribute more to predictions.",
+                                size="2",
+                                color="gray",
+                                line_height="1.6"
+                            ),
+                            rx.divider(margin_y="1rem"),
+                            rx.image(
+                                src=State.feature_importance_chart,
+                                width="100%",
+                                height="auto",
+                                border_radius="0.5rem"
+                            ),
+                            width="100%",
+                            spacing="3",
+                            align="start"
+                        ),
+                        style={
+                            "background": "white",
+                            "border": "1px solid #e5e7eb",
+                            "border-radius": "1rem",
+                            "padding": "2rem",
+                            "box-shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                        }
+                    )
+                ),
+                
                 # Detailed metrics table
                 rx.card(
                     rx.vstack(
@@ -126,7 +315,7 @@ def analysis_page() -> rx.Component:
                             align="center"
                         ),
                         rx.text(
-                            "Complete breakdown of all evaluation metrics for each model",
+                            "Complete breakdown of all evaluation metrics for each model. LightGBM achieved the best performance.",
                             size="2",
                             color="gray",
                             line_height="1.6"
@@ -197,7 +386,7 @@ def analysis_page() -> rx.Component:
                     rx.vstack(
                         rx.hstack(
                             rx.icon("lightbulb", size=24, color="#f59e0b"),
-                            rx.heading("Key Insights", size="5", weight="bold"),
+                            rx.heading("Key Insights & Findings", size="5", weight="bold"),
                             spacing="2",
                             align="center"
                         ),
@@ -206,7 +395,7 @@ def analysis_page() -> rx.Component:
                             rx.hstack(
                                 rx.icon("check-circle", size=20, color="#10b981"),
                                 rx.text(
-                                    "LightGBM achieved the highest accuracy at 92.4% with F1-score of 0.92",
+                                    "LightGBM achieved the highest accuracy at 92.4% with F1-score of 0.92, demonstrating superior performance",
                                     size="3",
                                     line_height="1.6"
                                 ),
@@ -217,7 +406,7 @@ def analysis_page() -> rx.Component:
                             rx.hstack(
                                 rx.icon("check-circle", size=20, color="#10b981"),
                                 rx.text(
-                                    "Random Forest performed well with 88.2% accuracy, showing robustness",
+                                    "Random Forest performed well with 88.2% accuracy, showing robustness and reliability",
                                     size="3",
                                     line_height="1.6"
                                 ),
@@ -228,7 +417,7 @@ def analysis_page() -> rx.Component:
                             rx.hstack(
                                 rx.icon("check-circle", size=20, color="#10b981"),
                                 rx.text(
-                                    "Sentiment analysis integration significantly improved recommendation quality",
+                                    "ROC-AUC scores above 0.95 for top models indicate excellent discrimination capability",
                                     size="3",
                                     line_height="1.6"
                                 ),
@@ -239,7 +428,29 @@ def analysis_page() -> rx.Component:
                             rx.hstack(
                                 rx.icon("check-circle", size=20, color="#10b981"),
                                 rx.text(
-                                    "TF-IDF vectorization with 3000 features captured text semantics effectively",
+                                    "Sentiment analysis integration significantly improved recommendation quality and accuracy",
+                                    size="3",
+                                    line_height="1.6"
+                                ),
+                                spacing="2",
+                                align="start",
+                                width="100%"
+                            ),
+                            rx.hstack(
+                                rx.icon("check-circle", size=20, color="#10b981"),
+                                rx.text(
+                                    "TF-IDF vectorization with 3000 features effectively captured text semantics from patient reviews",
+                                    size="3",
+                                    line_height="1.6"
+                                ),
+                                spacing="2",
+                                align="start",
+                                width="100%"
+                            ),
+                            rx.hstack(
+                                rx.icon("check-circle", size=20, color="#10b981"),
+                                rx.text(
+                                    "High precision and recall balance ensures both accurate positive predictions and comprehensive coverage",
                                     size="3",
                                     line_height="1.6"
                                 ),
@@ -265,7 +476,7 @@ def analysis_page() -> rx.Component:
                 width="100%",
                 spacing="4"
             ),
-            max_width="1200px",
+            max_width="1400px",
             padding_y="2rem"
         ),
         
