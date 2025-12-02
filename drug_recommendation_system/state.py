@@ -83,6 +83,13 @@ class State(rx.State):
     def load_models(self):
         """Load trained models and recommendation engine"""
         try:
+            # Import and run model downloader
+            from utils.model_downloader import ModelDownloader
+            
+            # Ensure models exist (download from GitHub if missing)
+            print("Checking for model files...")
+            ModelDownloader.ensure_models_exist()
+            
             # Initialize database
             db = DatabaseManager()
             
