@@ -62,7 +62,13 @@ class State(rx.State):
     # Analysis
     performance_chart: str = ""
     confusion_matrix_chart: str = ""
+    roc_curves_chart: str = ""
+    precision_recall_chart: str = ""
+    feature_importance_chart: str = ""
+    metrics_radar_chart: str = ""
+    class_distribution_chart: str = ""
     model_results: Dict[str, ModelMetrics] = {}
+    charts_loaded: bool = False
     
     def on_load(self):
         """Initialize state when app loads"""
@@ -83,25 +89,38 @@ class State(rx.State):
             recommendation_engine = RecommendationEngine.load('models/recommendation_engine.pkl')
             self.available_conditions = recommendation_engine.get_available_conditions()
             
-            # Load model results for analysis
-            _, _, model_results = ModelTrainer.load_best_model('models/best_model.pkl')
-            # Convert dict to typed ModelMetrics objects
-            self.model_results = {
-                model_name: ModelMetrics(**metrics)
-                for model_name, metrics in model_results.items()
-            }
-            
-            # Generate charts
-            trainer = ModelTrainer()
-            trainer.results = model_results
-            trainer.best_model_name = "LightGBM"
-            self.performance_chart = trainer.get_performance_comparison_chart()
-            self.confusion_matrix_chart = trainer.get_confusion_matrix_chart()
-            
-            print("✓ Models loaded successfully!")
+            # Only load charts if not already loaded
+            if not self.charts_loaded:
+                # Load model results and charts
+                model, model_name, model_results, charts = ModelTrainer.load_best_model('models/best_model.pkl')
+                
+                # Convert dict to typed ModelMetrics objects
+                self.model_results = {
+                    name: ModelMetrics(**{k: v for k, v in metrics.items() if k in ['accuracy', 'precision', 'recall', 'f1_score']})
+                    for name, metrics in model_results.items()
+                }
+                
+                # Load all charts from saved model
+                if charts:
+                    self.performance_chart = charts.get('performance_chart', '')
+                    self.confusion_matrix_chart = charts.get('confusion_matrix_chart', '')
+                    self.roc_curves_chart = charts.get('roc_curves_chart', '')
+                    self.precision_recall_chart = charts.get('precision_recall_chart', '')
+                    self.feature_importance_chart = charts.get('feature_importance_chart', '')
+                    self.metrics_radar_chart = charts.get('metrics_radar_chart', '')
+                    self.class_distribution_chart = charts.get('class_distribution_chart', '')
+                    print("✓ All charts loaded from saved model")
+                else:
+                    print("⚠ No charts found - please retrain with: python train_model.py")
+                
+                self.charts_loaded = True
+                print("✓ Models loaded successfully!")
+            else:
+                print("✓ Models already loaded (using cache)")
         except Exception as e:
             print(f"Error loading models: {e}")
-            print("Please run: python train_models.py")
+            print("Please run: python train_model.py")
+
     
     def handle_login(self):
         """Handle user login/creation"""
@@ -206,4 +225,4 @@ class State(rx.State):
     def load_from_history(self, condition: str):
         """Load a previous search from history"""
         self.selected_condition = condition
-        return self.search_drugs()
+        return State.search_drugs
