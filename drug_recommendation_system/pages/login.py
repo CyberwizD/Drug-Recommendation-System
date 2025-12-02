@@ -141,15 +141,26 @@ def login_page() -> rx.Component:
                             )
                         ),
                         
-                        # Login button
+                        # Login button with loading state
                         rx.button(
-                            rx.hstack(
-                                rx.icon("arrow-right", size=20),
-                                rx.text("Continue", size="3", weight="bold"),
-                                spacing="2",
-                                align="center"
+                            rx.cond(
+                                State.is_logging_in,
+                                rx.hstack(
+                                    rx.icon("loader-2", size=20),
+                                    rx.text("Logging in...", size="3", weight="bold"),
+                                    spacing="2",
+                                    align="center"
+                                ),
+                                rx.hstack(
+                                    rx.icon("arrow-right", size=20),
+                                    rx.text("Continue", size="3", weight="bold"),
+                                    spacing="2",
+                                    align="center"
+                                )
                             ),
                             on_click=State.handle_login,
+                            disabled=State.is_logging_in,
+                            loading=State.is_logging_in,
                             size="3",
                             width="100%",
                             style={
@@ -162,6 +173,10 @@ def login_page() -> rx.Component:
                                 "_hover": {
                                     "transform": "translateY(-2px)",
                                     "box-shadow": "0 10px 15px -3px rgba(102, 126, 234, 0.4)"
+                                },
+                                "_disabled": {
+                                    "opacity": "0.7",
+                                    "cursor": "not-allowed"
                                 }
                             }
                         ),
