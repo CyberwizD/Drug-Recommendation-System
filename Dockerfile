@@ -30,5 +30,10 @@ RUN reflex init
 # Expose port
 EXPOSE 8000
 
+# Set environment variables
+ENV REFLEX_ENV=prod
+ENV PYTHONUNBUFFERED=1
+
 # Run the application
-CMD reflex run --env prod --backend-host 0.0.0.0 --backend-port $PORT
+# Reflex needs both backend and frontend running
+CMD reflex run --env prod --loglevel info --backend-host 0.0.0.0 --backend-port ${PORT:-8000}
