@@ -27,7 +27,7 @@ def main():
     train_df, test_df = preprocessor.load_and_preprocess(
         train_path='data/drugsComTrain_raw.tsv',
         test_path='data/drugsComTest_raw.tsv',
-        sample_frac=0.3  # Adjust this value
+        sample_frac=0.1  # Adjust this value
     )
     
     print(f"✓ Training samples: {len(train_df)}")
