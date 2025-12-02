@@ -33,10 +33,11 @@ class DataPreprocessor:
         self.lemmatizer = WordNetLemmatizer()
     
     def decode_html(self, text):
-        """Decode HTML-encoded characters"""
+        """Decode HTML-encoded characters and remove all HTML tags"""
         if pd.isna(text):
             return ""
         try:
+            # Use BeautifulSoup to strip ALL HTML tags including </span>, <span>, etc.
             return BeautifulSoup(str(text), "html.parser").get_text()
         except:
             return str(text)
@@ -79,9 +80,24 @@ class DataPreprocessor:
         
         print(f"Train size: {len(train_df)}, Test size: {len(test_df)}")
         
+        # Clean HTML from condition and drugName columns
+        print("Cleaning HTML tags from data...")
+        for df in [train_df, test_df]:
+            # Remove ALL HTML tags from condition names (removes </span>, <span>, etc.)
+            df['condition'] = df['condition'].apply(self.decode_html)
+            # Remove ALL HTML tags from drug names
+            df['drugName'] = df['drugName'].apply(self.decode_html)
+            # Strip extra whitespace
+            df['condition'] = df['condition'].str.strip()
+            df['drugName'] = df['drugName'].str.strip()
+        
         # Drop rows with missing conditions
         train_df = train_df.dropna(subset=['condition'])
         test_df = test_df.dropna(subset=['condition'])
+        
+        # Drop rows with empty conditions after cleaning
+        train_df = train_df[train_df['condition'] != '']
+        test_df = test_df[test_df['condition'] != '']
         
         # Fill missing reviews
         train_df['review'] = train_df['review'].fillna("")
@@ -111,6 +127,6 @@ class DataPreprocessor:
         if 'Unnamed: 0' in test_df.columns:
             test_df.drop('Unnamed: 0', axis=1, inplace=True)
         
+        print("✓ HTML tags removed from conditions and drug names")
         print("Preprocessing complete!")
         return train_df, test_df
-    
