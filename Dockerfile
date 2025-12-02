@@ -4,9 +4,10 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies required by Reflex
 RUN apt-get update && apt-get install -y \
     curl \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
@@ -21,8 +22,11 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p models database
 
+# Initialize Reflex (downloads Bun and frontend dependencies)
+RUN reflex init
+
 # Expose port
 EXPOSE 8000
 
 # Run the application
-CMD reflex run --env prod --backend-only & reflex run --env prod --frontend-only --backend-port 8000
+CMD reflex run --env prod --backend-host 0.0.0.0 --backend-port $PORT
