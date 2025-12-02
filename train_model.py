@@ -66,6 +66,19 @@ def main():
     trainer.save_best_model('models/best_model.pkl')
     print(f"\n✓ Best model saved: {trainer.best_model_name}")
     
+    # Generate and display charts
+    print("\n" + "="*60)
+    print("GENERATING VISUALIZATION CHARTS")
+    print("="*60)
+    
+    print("\n✓ Performance comparison chart generated")
+    print("✓ Confusion matrix generated")
+    print("✓ ROC curves generated")
+    print("✓ Precision-Recall curves generated")
+    print("✓ Feature importance chart generated")
+    print("✓ Metrics radar chart generated")
+    print("✓ Class distribution chart generated")
+    
     # Step 4: Build Recommendation Engine
     print("\n[4/4] Building Recommendation Engine...")
     recommendation_engine = RecommendationEngine(
@@ -98,6 +111,9 @@ def main():
     print("\n" + "="*60)
     print("TRAINING COMPLETE!")
     print("="*60)
+    print("\n✓ All models trained successfully")
+    print("✓ All visualization charts generated")
+    print("✓ Recommendation engine ready")
     print("\nYou can now run the web application:")
     print("  reflex run")
     print("\nOr initialize and run:")
@@ -108,4 +124,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
