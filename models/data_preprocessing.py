@@ -99,6 +99,35 @@ class DataPreprocessor:
         train_df = train_df[train_df['condition'] != '']
         test_df = test_df[test_df['condition'] != '']
         
+        # Filter out invalid conditions (HTML artifacts, user feedback text, etc.)
+        print("Filtering invalid conditions...")
+        invalid_patterns = [
+            'users found this comment helpful',
+            'user found this comment helpful',
+            'Unnamed:',
+            'span',
+            'div',
+            'class=',
+            'id=',
+            '<',
+            '>',
+        ]
+        
+        for df in [train_df, test_df]:
+            # Remove rows where condition contains any invalid pattern
+            mask = df['condition'].str.lower().str.contains('|'.join(invalid_patterns), regex=True, na=False)
+            df.drop(df[mask].index, inplace=True)
+            
+            # Also filter out conditions that are just numbers or very short
+            df.drop(df[df['condition'].str.len() < 3].index, inplace=True)
+            df.drop(df[df['condition'].str.match(r'^\d+$', na=False)].index, inplace=True)
+        
+        # Reset indices
+        train_df.reset_index(drop=True, inplace=True)
+        test_df.reset_index(drop=True, inplace=True)
+        
+        print(f"After filtering - Train: {len(train_df)}, Test: {len(test_df)}")
+        
         # Fill missing reviews
         train_df['review'] = train_df['review'].fillna("")
         test_df['review'] = test_df['review'].fillna("")
@@ -128,5 +157,6 @@ class DataPreprocessor:
             test_df.drop('Unnamed: 0', axis=1, inplace=True)
         
         print("✓ HTML tags removed from conditions and drug names")
+        print("✓ Invalid conditions filtered out")
         print("Preprocessing complete!")
         return train_df, test_df
