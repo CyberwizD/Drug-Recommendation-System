@@ -98,7 +98,7 @@ def login_page() -> rx.Component:
                         align="center"
                     ),
                     
-                    # Input field
+                    # Input field with better visibility
                     rx.vstack(
                         rx.input(
                             placeholder="Enter your username",
@@ -107,14 +107,19 @@ def login_page() -> rx.Component:
                             size="3",
                             width="100%",
                             style={
-                                "border": "2px solid #e5e7eb",
+                                "border": "2px solid #d1d5db",
                                 "border-radius": "0.75rem",
                                 "padding": "1rem",
                                 "font-size": "1rem",
+                                "color": "#111827",
+                                "background": "white",
                                 "_focus": {
                                     "border-color": "#667eea",
                                     "box-shadow": "0 0 0 3px rgba(102, 126, 234, 0.1)",
                                     "outline": "none"
+                                },
+                                "_hover": {
+                                    "border-color": "#9ca3af"
                                 }
                             }
                         ),
