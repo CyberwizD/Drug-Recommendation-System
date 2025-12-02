@@ -79,13 +79,22 @@ def history_page() -> rx.Component:
                                                 variant="soft"
                                             ),
                                             rx.button(
-                                                rx.icon("refresh-cw", size=16),
-                                                "View Again",
-                                                on_click=[
-                                                    State.set_selected_condition(item.condition),
-                                                    State.set_search_performed(False),
-                                                    State.search_drugs
-                                                ],
+                                                rx.cond(
+                                                    State.is_loading,
+                                                    rx.hstack(
+                                                        rx.icon("loader-2", size=16),
+                                                        "Loading...",
+                                                        spacing="1"
+                                                    ),
+                                                    rx.hstack(
+                                                        rx.icon("refresh-cw", size=16),
+                                                        "View Again",
+                                                        spacing="1"
+                                                    )
+                                                ),
+                                                on_click=State.load_from_history(item.condition),
+                                                loading=State.is_loading,
+                                                disabled=State.is_loading,
                                                 size="2",
                                                 variant="soft",
                                                 style={
@@ -94,6 +103,10 @@ def history_page() -> rx.Component:
                                                     "_hover": {
                                                         "transform": "translateY(-2px)",
                                                         "box-shadow": "0 4px 6px rgba(102, 126, 234, 0.3)"
+                                                    },
+                                                    "_disabled": {
+                                                        "opacity": "0.7",
+                                                        "cursor": "not-allowed"
                                                     }
                                                 }
                                             ),
